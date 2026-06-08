@@ -1,0 +1,80 @@
+<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>Stopwatch</title>
+<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Segoe UI',sans-serif;background:#0a0a1a;color:#fff;min-height:100vh;display:flex;justify-content:center;align-items:center}
+.ob{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);z-index:1000;display:flex;justify-content:center;align-items:center}.ob.hide{display:none}
+.oc{background:#141428;border-radius:20px;padding:40px;max-width:500px;width:90%;text-align:center}
+.oc h2{color:#00cec9;font-size:28px;margin-bottom:8px}.oc .sub{color:#888;font-size:14px}
+.stps{margin:25px 0;text-align:left;display:flex;flex-direction:column;gap:18px}
+.st{display:flex;gap:14px;align-items:flex-start}.st .n{width:32px;height:32px;border-radius:50%;background:#00cec9;color:#000;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px}
+.st h4{font-size:14px;margin-bottom:2px}.st p{font-size:12px;color:#888;line-height:1.5}
+.oc button{padding:14px 40px;border:none;border-radius:10px;background:#00cec9;color:#000;font-size:16px;font-weight:700;cursor:pointer}
+.oc .sk{color:#555;font-size:12px;cursor:pointer;margin-top:12px;display:inline-block}
+.app{display:none;max-width:400px;width:100%;padding:20px;text-align:center}.app.show{display:block}
+h1{margin-bottom:5px}h1 span{background:linear-gradient(90deg,#00cec9,#00b894);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.sub2{color:#666;margin-bottom:25px;font-size:14px}
+.display{font-size:72px;font-weight:200;font-variant-numeric:tabular-nums;margin-bottom:5px;font-family:monospace}
+.display .ms{font-size:36px;color:#888}
+.controls{display:flex;justify-content:center;gap:12px;margin-bottom:25px}
+.controls button{width:60px;height:60px;border-radius:50%;border:2px solid #333;background:transparent;color:#fff;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;transition:.15s}
+.controls button:hover{border-color:#00cec9}
+.controls .start{background:#00cec9;color:#000;border-color:#00cec9}
+.controls .stop{background:#ff6b6b;color:#fff;border-color:#ff6b6b}
+.controls .lap{border-color:#888}.controls .reset{border-color:#888}
+.laps{background:#141428;border-radius:14px;padding:15px;text-align:left;max-height:300px;overflow-y:auto}
+.laps h3{color:#888;font-size:13px;margin-bottom:10px}
+.lap-item{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #0a0a1a;font-size:14px;font-family:monospace}
+.lap-item:last-child{border:none}
+.lap-item .num{color:#888;width:30px}.lap-item .time{color:#fff}.lap-item .split{color:#00cec9}
+.lap-item.fastest .time{color:#00b894}.lap-item.slowest .time{color:#ff6b6b}
+</style></head><body>
+<div class="ob" id="ob"><div class="oc">
+<h2>Stopwatch</h2><p class="sub">Precision timing with lap tracking</p>
+<div class="stps">
+<div class="st"><div class="n">1</div><div><h4>Start the Timer</h4><p>Click the green Start button. The stopwatch begins counting with millisecond precision.</p></div></div>
+<div class="st"><div class="n">2</div><div><h4>Record Laps</h4><p>Click Lap while running to record split times. Each lap shows the time since the last lap.</p></div></div>
+<div class="st"><div class="n">3</div><div><h4>Review Results</h4><p>Fastest lap is green, slowest is red. Click Reset to clear everything and start over.</p></div></div>
+</div>
+<button onclick="start()">Open Stopwatch</button>
+<div class="sk" onclick="start()">Skip</div>
+</div></div>
+<div class="app" id="app">
+<h1><span>Stopwatch</span></h1><p class="sub2">Precision timing with laps</p>
+<div class="display"><span id="time">00:00:00</span><span class="ms" id="ms">.000</span></div>
+<div class="controls">
+<button class="start" id="startBtn" onclick="toggle()">&#9654;</button>
+<button class="lap" id="lapBtn" onclick="lap()" disabled>Lap</button>
+<button class="reset" onclick="reset()">&#8635;</button>
+</div>
+<div class="laps"><h3>Laps</h3><div id="laps"></div></div></div>
+<script>
+var running=false,startTime=0,elapsed=0,iv,laps=[];
+function start(){document.getElementById('ob').classList.add('hide');document.getElementById('app').classList.add('show');localStorage.setItem('sw_seen','1')}
+if(localStorage.getItem('sw_seen')){document.getElementById('ob').classList.add('hide');document.getElementById('app').classList.add('show')}
+function format(ms){var h=Math.floor(ms/3600000);var m=Math.floor((ms%3600000)/60000);var s=Math.floor((ms%60000)/1000);var ml=ms%1000;
+return{main:String(h).padStart(2,'0')+':'+String(m).padStart(2,'0')+':'+String(s).padStart(2,'0'),ms:'.'+String(ml).padStart(3,'0')}}
+function update(){var now=Date.now()-startTime+elapsed;var f=format(now);document.getElementById('time').textContent=f.main;document.getElementById('ms').textContent=f.ms}
+function toggle(){
+if(running){clearInterval(iv);running=false;elapsed+=Date.now()-startTime;
+document.getElementById('startBtn').innerHTML='&#9654;';document.getElementById('startBtn').className='start';
+document.getElementById('lapBtn').disabled=true}
+else{startTime=Date.now();running=true;iv=setInterval(update,10);
+document.getElementById('startBtn').innerHTML='&#9208;';document.getElementById('startBtn').className='stop';
+document.getElementById('lapBtn').disabled=false}
+}
+function lap(){
+if(!running)return;var now=Date.now()-startTime+elapsed;
+var lastLap=laps.length?laps[laps.length-1].total:0;
+laps.push({num:laps.length+1,total:now,split:now-lastLap});renderLaps();
+}
+function renderLaps(){
+if(!laps.length){document.getElementById('laps').innerHTML='';return}
+var fastest=Infinity,slowest=0,fi=0,si=0;
+laps.forEach(function(l,i){if(l.split<fastest){fastest=l.split;fi=i}if(l.split>slowest){slowest=l.split;si=i}});
+var html='';for(var i=laps.length-1;i>=0;i--){var l=laps[i];var f=format(l.split);var cls='';
+if(laps.length>1){if(i===fi)cls='fastest';if(i===si)cls='slowest'}
+html+='<div class="lap-item '+cls+'"><span class="num">#'+l.num+'</span><span class="split">'+f.main+f.ms+'</span><span class="time">'+format(l.total).main+format(l.total).ms+'</span></div>'}
+document.getElementById('laps').innerHTML=html;
+}
+function reset(){clearInterval(iv);running=false;elapsed=0;laps=[];document.getElementById('time').textContent='00:00:00';document.getElementById('ms').textContent='.000';
+document.getElementById('startBtn').innerHTML='&#9654;';document.getElementById('startBtn').className='start';
+document.getElementById('lapBtn').disabled=true;document.getElementById('laps').innerHTML=''}
+</script></body></html>
